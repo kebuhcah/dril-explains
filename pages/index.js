@@ -1,42 +1,44 @@
 import Head from "next/head";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "./index.module.css";
 
 export default function Home() {
   const [nameInput, setNameInput] = useState("");
-  const [prevName, setPrevName] = useState("");
+  const [submittedName, setSubmittedName] = useState("");
+  const [eventCounter, setEventCounter] = useState(0);
   const [result, setResult] = useState();
-  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setResult("");
+
+    const eventSource = new EventSource(`/api/generate?name=${encodeURIComponent(submittedName)}`);
+
+    eventSource.onerror = (e) => {
+      console.error(e);
+      eventSource.close();
+    }
+
+    eventSource.onmessage = (e) => {
+      console.log(e);
+      setResult((r) => { return r + JSON.parse(e.data).token ?? "" });
+    };
+
+    return () => {
+      console.log('UNMOUNTED');
+      eventSource.close();
+    }
+  }, [submittedName, eventCounter])
 
   async function onSubmit(event) {
     event.preventDefault();
-    try {
-      setLoading(true);
-      const response = await fetch("/api/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name: nameInput }),
-      });
-
-      const data = await response.json();
-      if (response.status !== 200) {
-        throw data.error || new Error(`Request failed with status ${response.status}`);
-      }
-
-      setResult(data.result);
-      setPrevName(nameInput);
-      setLoading(false);
+    try {      
+      setSubmittedName(nameInput);
+      setEventCounter(x => x + 1);
     } catch (error) {
       // Consider implementing your own error handling logic here
       console.error(error);
       alert(error.message);
     }
-  }
-
-  function cleanName(name) {
-    return name.trim().split(/\s+/).map(s => s[0].toUpperCase() + s.slice(1).toLowerCase()).join(' ');
   }
 
   return (
@@ -57,8 +59,7 @@ export default function Home() {
           />
           <input type="submit" value="Ask Dril" />
         </form>
-        <div className={styles.result}>{loading ? "Generating..." :
-          result ?? ""}</div>
+        <div className={styles.result}>{result ?? ""}</div>
       </main>
     </div>
   );

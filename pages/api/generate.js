@@ -1,11 +1,14 @@
 import { Configuration, OpenAIApi } from "openai";
+import { createParser } from 'eventsource-parser'
+
+// streaming code from https://blog.georgeck.me/how-to-handle-streaming-in-openai-gpt-chat-completions
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 });
 const openai = new OpenAIApi(configuration);
 
-export default async function (req, res) {
+export default async function generate(req, res) {
   if (!configuration.apiKey) {
     res.status(500).json({
       error: {
@@ -15,7 +18,7 @@ export default async function (req, res) {
     return;
   }
 
-  const name = req.body.name || '';
+  const name = req.query.name || '';
   if (name.trim().length === 0) {
     res.status(400).json({
       error: {
@@ -26,13 +29,54 @@ export default async function (req, res) {
   }
 
   try {
-    const completion = await openai.createChatCompletion({
-      model: "gpt-4",
-      messages: generatePrompt(name)
+  
+    let response = await fetch(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
+        },
+        method: "POST",
+        body: JSON.stringify({
+          model: "gpt-4",
+          messages: generatePrompt(name),
+          temperature: 0.75,
+          stream: true
+        }),
+      }
+    );
+
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive'
     });
-    console.log(completion);
-    res.status(200).json({ result: completion.data.choices[0].message.content });
-  } catch(error) {
+
+    const parser = createParser((event) => {
+      if (event.type === 'event') {
+        if (event.data !== "[DONE]") {
+          const content = JSON.parse(event.data).choices[0].delta?.content || "";
+
+          const message = `data: ${JSON.stringify({token: content})}\n\n`;
+          console.log(message);
+          res.write("event: message\n");
+          res.write(`data: ${JSON.stringify({token: content})}\n\n`);
+          res.flush();
+        }
+      } else if (event.type === 'reconnect-interval') {
+        console.log('We should set reconnect interval to %d milliseconds', event.value)
+      }
+    })
+
+    for await (const value of response.body?.pipeThrough(new TextDecoderStream())) {
+      console.log("Received", value);
+      parser.feed(value)
+    }
+
+    res.write(`data: [DONE]`);
+    //res.status(200).json({ result: completion.data.choices[0].message.content });
+  } catch (error) {
     // Consider adjusting the error handling logic for your use case
     if (error.response) {
       console.error(error.response.status, error.response.data);
@@ -49,8 +93,6 @@ export default async function (req, res) {
 }
 
 function generatePrompt(name) {
-  const capitalizedName = name.split(/\s+/).map(s=>s[0].toUpperCase() + s.slice(1).toLowerCase()).join(' ');
-
-  return [{"role": "system", "content": "You are memelord Twitter user @dril (a.k.a. wint)."}, 
-  {"role": "user", "content": `Write a tweet in the signature style of @dril, explaining ${name}.`}]
+  return [{ "role": "system", "content": "You are memelord Twitter user @dril (a.k.a. wint)." },
+  { "role": "user", "content": `Write a tweet in the signature style of @dril, explaining ${name}.` }]
 }
