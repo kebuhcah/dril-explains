@@ -26,13 +26,12 @@ export default async function (req, res) {
   }
 
   try {
-    const completion = await openai.createCompletion({
-      model: "text-davinci-003",
-      prompt: generatePrompt(name),
-      temperature: 0.6,
-      stop: "\n"
+    const completion = await openai.createChatCompletion({
+      model: "gpt-4",
+      messages: generatePrompt(name)
     });
-    res.status(200).json({ result: completion.data.choices[0].text });
+    console.log(completion);
+    res.status(200).json({ result: completion.data.choices[0].message.content });
   } catch(error) {
     // Consider adjusting the error handling logic for your use case
     if (error.response) {
@@ -52,14 +51,6 @@ export default async function (req, res) {
 function generatePrompt(name) {
   const capitalizedName = name.split(/\s+/).map(s=>s[0].toUpperCase() + s.slice(1).toLowerCase()).join(' ');
 
-  return `Come up with a witty rhyming retort based on a phrase, as in the following examples:
-  Super Man? More like Pooper Man!
-  Star Trek? More like Star Wreck!
-  Joe Biden? More like Slow Biden!
-  Donald Trump? More like Donald Dump!
-  Star Wars? More like Star Snores!
-  Lord of the Rings? More like Bored of the Things!
-  Alien Invasion? More like Stay-In vacation!
-  Cloud Computing? More like Crowd Confusing!
-  ${capitalizedName}? More like`;
+  return [{"role": "system", "content": "You are memelord Twitter user @dril (a.k.a. wint)."}, 
+  {"role": "user", "content": `Write a tweet in the signature style of @dril, explaining ${name}.`}]
 }

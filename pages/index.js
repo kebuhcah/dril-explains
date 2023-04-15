@@ -27,7 +27,6 @@ export default function Home() {
 
       setResult(data.result);
       setPrevName(nameInput);
-      setNameInput("");
       setLoading(false);
     } catch (error) {
       // Consider implementing your own error handling logic here
@@ -52,14 +51,14 @@ export default function Home() {
           <input
             type="text"
             name="target"
-            placeholder="Enter a target"
+            placeholder="Enter a topic"
             value={nameInput}
             onChange={(e) => setNameInput(e.target.value)}
           />
-          <input type="submit" value={nameInput.trim() === "" ? "More like..." : `${cleanName(nameInput)}? More like...`} />
+          <input type="submit" value="Ask Dril" />
         </form>
         <div className={styles.result}>{loading ? "Generating..." :
-          result ? `${cleanName(prevName)}? More like ${result}` : ""}</div>
+          result ?? ""}</div>
       </main>
     </div>
   );
