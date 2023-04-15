@@ -60,9 +60,7 @@ export default async function generate(req, res) {
 
           const message = `data: ${JSON.stringify({token: content})}\n\n`;
           console.log(message);
-          res.write("event: message\n");
-          res.write(`data: ${JSON.stringify({token: content})}\n\n`);
-          res.flush();
+          res.write(`event: message\ndata: ${JSON.stringify({token: content})}\n\n`);
         }
       } else if (event.type === 'reconnect-interval') {
         console.log('We should set reconnect interval to %d milliseconds', event.value)
