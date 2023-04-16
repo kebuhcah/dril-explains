@@ -9,6 +9,9 @@ export default function Home() {
   const [result, setResult] = useState();
 
   useEffect(() => {
+    if (submittedName === "")
+      return;
+
     setResult("");
 
     const eventSource = new EventSource(`/api/generate?name=${encodeURIComponent(submittedName)}`);
@@ -31,7 +34,7 @@ export default function Home() {
 
   async function onSubmit(event) {
     event.preventDefault();
-    try {      
+    try {
       setSubmittedName(nameInput);
       setEventCounter(x => x + 1);
     } catch (error) {

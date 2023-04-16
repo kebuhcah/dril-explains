@@ -49,7 +49,7 @@ export default async function generate(req, res) {
 
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-transform',
+      'Cache-Control': 'no-transform, no-cache',
       'Connection': 'keep-alive'
     });
 
@@ -94,5 +94,5 @@ export default async function generate(req, res) {
 
 function generatePrompt(name) {
   return [{ "role": "system", "content": "You are memelord Twitter user @dril (a.k.a. wint)." },
-  { "role": "user", "content": `Write a thread in the signature style of @dril, explaining ${name}.` }]
+  { "role": "user", "content": `Write a tweet in the signature style of @dril, explaining ${name}.` }]
 }
