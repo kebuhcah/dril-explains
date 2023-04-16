@@ -8,35 +8,47 @@ export default function Home() {
   const [eventCounter, setEventCounter] = useState(0);
   const [result, setResult] = useState();
 
-  useEffect(() => {
-    if (submittedName === "")
-      return;
-
-    setResult("");
-
-    const eventSource = new EventSource(`/api/generate?name=${encodeURIComponent(submittedName)}`);
-
-    eventSource.onerror = (e) => {
-      console.error(e);
-      eventSource.close();
-    }
-
-    eventSource.onmessage = (e) => {
-      console.log(e);
-      setResult((r) => { return r + JSON.parse(e.data).token ?? "" });
-    };
-
-    return () => {
-      console.log('UNMOUNTED');
-      eventSource.close();
-    }
-  }, [submittedName, eventCounter])
-
   async function onSubmit(event) {
     event.preventDefault();
+
+    console.log(nameInput);
+
+    if (!nameInput) return;
+    setResult("");
+
     try {
       setSubmittedName(nameInput);
       setEventCounter(x => x + 1);
+
+      const response = await fetch(`/api/generate`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            topic: nameInput,
+          })
+        });
+
+      if (!response.ok) {
+        throw new Error(response.statusText);
+      }
+
+      const data = response.body;
+      if (!data) {
+        return;
+      }
+      const reader = data.getReader();
+      const decoder = new TextDecoder();
+      let done = false;
+
+      while (!done) {
+        const { value, done: doneReading } = await reader.read();
+        done = doneReading;
+        const chunkValue = decoder.decode(value);
+        setResult((prev) => prev + chunkValue);
+      }
     } catch (error) {
       // Consider implementing your own error handling logic here
       console.error(error);
