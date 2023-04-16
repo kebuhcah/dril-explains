@@ -1,12 +1,21 @@
 import Head from "next/head";
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import styles from "./index.module.css";
 
 export default function Home() {
   const [nameInput, setNameInput] = useState("");
   const [submittedName, setSubmittedName] = useState("");
   const [eventCounter, setEventCounter] = useState(0);
-  const [result, setResult] = useState();
+  const [result, setResult] = useState("Ask about anything!");
+
+  const outputRef = useRef(null);
+
+  /*useEffect(() => {
+    // 👇️ scroll to bottom every time messages change
+    outputRef.current?.scrollIntoView(false, {behavior: 'smooth'});
+  }, [result]);*/
+
+
 
   async function onSubmit(event) {
     event.preventDefault();
@@ -48,6 +57,7 @@ export default function Home() {
         done = doneReading;
         const chunkValue = decoder.decode(value);
         setResult((prev) => prev + chunkValue);
+        outputRef.current?.scrollIntoView(false, { behavior: 'smooth' });
       }
     } catch (error) {
       // Consider implementing your own error handling logic here
@@ -74,7 +84,9 @@ export default function Home() {
           />
           <input type="submit" value="Ask Dril" />
         </form>
-        <div className={styles.result}>{result ?? ""}</div>
+        <div className={styles.result}>
+          <div ref={outputRef} className={styles.scroller}>{result.length ? result : "Loading..."}</div>
+        </div>
       </main>
     </div>
   );
