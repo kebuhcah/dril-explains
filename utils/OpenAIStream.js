@@ -1,10 +1,13 @@
 import { createParser } from "eventsource-parser";
 
+const DIVIDER = "==================================================";
+
 export async function OpenAIStream(payload) {
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
 
   let counter = 0;
+  let fullText = "";
 
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     headers: {
@@ -23,12 +26,15 @@ export async function OpenAIStream(payload) {
         if (event.type === "event") {
           const data = event.data;
           if (data === "[DONE]") {
+            console.log(`TOKENS PRODUCED: ${counter}`);
+            console.log(`${DIVIDER}\n${fullText}\n${DIVIDER}`);
             controller.close();
             return;
           }
           try {
             const json = JSON.parse(data);
             const text = json.choices[0].delta?.content;
+            fullText += text;
             const queue = encoder.encode(text);
             controller.enqueue(queue);
             counter++;

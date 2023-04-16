@@ -6,7 +6,7 @@ export default function Home() {
   const [nameInput, setNameInput] = useState("");
   const [submittedName, setSubmittedName] = useState("");
   const [eventCounter, setEventCounter] = useState(0);
-  const [result, setResult] = useState("Ask about anything!");
+  const [result, setResult] = useState("Ask about anything! (put it as a noun phrase for best results)");
 
   const outputRef = useRef(null);
 
