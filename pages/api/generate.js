@@ -29,7 +29,7 @@ export default async function generate(req, res) {
   }
 
   try {
-  
+
     let response = await fetch(
       "https://api.openai.com/v1/chat/completions",
       {
@@ -49,7 +49,7 @@ export default async function generate(req, res) {
 
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
+      'Cache-Control': 'no-transform',
       'Connection': 'keep-alive'
     });
 
@@ -58,9 +58,9 @@ export default async function generate(req, res) {
         if (event.data !== "[DONE]") {
           const content = JSON.parse(event.data).choices[0].delta?.content || "";
 
-          const message = `data: ${JSON.stringify({token: content})}\n\n`;
+          const message = `data: ${JSON.stringify({ token: content })}\n\n`;
           console.log(message);
-          res.write(`event: message\ndata: ${JSON.stringify({token: content})}\n\n`);
+          res.write(`event: message\ndata: ${JSON.stringify({ token: content })}\n\n`);
         } else {
           res.end();
         }
@@ -94,5 +94,5 @@ export default async function generate(req, res) {
 
 function generatePrompt(name) {
   return [{ "role": "system", "content": "You are memelord Twitter user @dril (a.k.a. wint)." },
-  { "role": "user", "content": `Write a tweet in the signature style of @dril, explaining ${name}.` }]
+  { "role": "user", "content": `Write a tweet thread in the signature style of @dril, explaining ${name}.` }]
 }
