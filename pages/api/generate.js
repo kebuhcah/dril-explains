@@ -15,7 +15,7 @@ const openai = new OpenAIApi();
 export default async function generateNew(req) {
   const { topic } = (await req.json());
 
-  console.log(`TOPIC: ${topic}`)
+  console.log(`TOPIC: ${topic}`);
 
   let errorMessage, errorStatus;
 
